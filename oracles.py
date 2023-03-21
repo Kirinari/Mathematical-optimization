@@ -1,3 +1,6 @@
+import scipy
+import numpy as np
+
 class BaseSmoothOracle(object):
     """
     Base class for implementation of oracles.
@@ -40,10 +43,10 @@ class QuadraticOracle(BaseSmoothOracle):
         self.b = b
 
     def func(self, x):
-        # your code here
+        return 0.5 * x.T @ self.A @ x - self.b.T @ x
 
     def grad(self, x):
-        # your code here
+        return self.A @ x - self.b
 
         
 class LogRegL2Oracle(BaseSmoothOracle):
@@ -70,10 +73,16 @@ class LogRegL2Oracle(BaseSmoothOracle):
         self.regcoef = regcoef
 
     def func(self, x):
-        # your code here
+        Ax = self.matvec_Ax(x)
+        return np.log(1 + np.exp(np.multiply(-self.b, Ax))).mean() + 1 / self.b.shape[0] *  (x @ x)
 
     def grad(self, x):
-        # your code here
+
+        t_0 = np.exp(-self.b * self.matvec_Ax(x))
+        t_1 = np.ones(self.b.shape[0]) + t_0
+        gradient = -self.matvec_ATx(t_0 * self.b / t_1)
+
+        return gradient / self.b.shape[0] + 2 / self.b.shape[0]  * x
 
 
 def create_log_reg_oracle(A, b, regcoef):
@@ -81,11 +90,11 @@ def create_log_reg_oracle(A, b, regcoef):
     Auxiliary function for creating logistic regression oracles.
         `oracle_type` must be either 'usual' or 'optimized'
     """
-    matvec_Ax = lambda x: x  # your code here
-    matvec_ATx = lambda x: x  # your code here
+    matvec_Ax = lambda x : A @ x
+    matvec_ATx = lambda x : A.T @ x
 
     def matmat_ATsA(s):
         # your code here
-        return None
+        return A.T @ s @ A
 
     return LogRegL2Oracle(matvec_Ax, matvec_ATx, matmat_ATsA, b, regcoef)
