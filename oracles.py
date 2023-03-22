@@ -74,13 +74,16 @@ class LogRegL2Oracle(BaseSmoothOracle):
 
     def func(self, x):
         Ax = self.matvec_Ax(x)
-        return np.log(1 + np.exp(np.multiply(-self.b, Ax))).mean() + 1 / self.b.shape[0] *  (x @ x)
+        return np.logaddexp(np.multiply(-self.b, Ax), 0).mean() + 1 / self.b.shape[0] *  (x @ x)
 
-    def grad(self, x):
+    def grad(self, x): 
 
-        t_0 = np.exp(-self.b * self.matvec_Ax(x))
-        t_1 = np.ones(self.b.shape[0]) + t_0
-        gradient = -self.matvec_ATx(t_0 * self.b / t_1)
+        
+        # t_0 = np.exp(-self.b * self.matvec_Ax(x))
+        # t_1 = np.ones(self.b.shape[0]) + t_0
+        # gradient = -self.matvec_ATx(t_0 * self.b / t_1)
+        exp_denom = scipy.special.expit(-self.b * self.matvec_Ax(x))
+        gradient = -self.matvec_ATx(exp_denom * self.b)
 
         return gradient / self.b.shape[0] + 2 / self.b.shape[0]  * x
 
@@ -94,7 +97,6 @@ def create_log_reg_oracle(A, b, regcoef):
     matvec_ATx = lambda x : A.T @ x
 
     def matmat_ATsA(s):
-        # your code here
         return A.T @ s @ A
 
     return LogRegL2Oracle(matvec_Ax, matvec_ATx, matmat_ATsA, b, regcoef)

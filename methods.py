@@ -157,14 +157,15 @@ class GradientDescent(object):
 
         iter = 0
         x_k = self.x_0
-        while iter < max_iter and f_grad_x0 > 1e-3:  
-            f_grad_xk = np.linalg.norm(self.oracle.grad(x_k))
+        f_grad_xk = f_grad_x0 
+        while iter < max_iter and f_grad_x0 > 1e-6:              
             if f_grad_xk ** 2 / f_grad_x0 ** 2 <= self.tolerance:
                 break
 
-            d_k = -self.oracle.grad(x_k)
+            d_k = -self.oracle.grad(x_k)      
             alpha = self.line_search_tool.line_search(self.oracle, x_k, d_k)
             x_k = x_k + alpha * d_k
+            f_grad_xk = np.linalg.norm(self.oracle.grad(x_k))
             iter += 1
 
             f_xk = self.oracle.func(x_k)
